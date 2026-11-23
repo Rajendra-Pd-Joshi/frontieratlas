@@ -75,9 +75,9 @@ def build() -> dict[str, Path]:
     out["News"] = _write_csv("news",
         ["title", "source", "date", "date_source", "url", "full_text_chars", "collectedAt"],
         [{"title": r["content"]["title"], "source": r["source"]["name"],
-          "date": r["content"].get("date", ""), "date_source": r["content"].get("date_source", ""),
+          "date": r["content"].get("published_date", ""), "date_source": r["content"].get("date_source", ""),
           "url": r["source"]["url"],
-          "full_text_chars": len(r["content"].get("full_text", "") or ""),
+          "full_text_chars": r["content"].get("full_text_chars", 0),
           "collectedAt": r["collectedAt"]} for r in news])
     mapping = _read_jsonl(ROOT / "data" / "canonical" / "entity_mapping_log.jsonl")
     out["Entity Mapping Log"] = _write_csv("entity_mapping_log",

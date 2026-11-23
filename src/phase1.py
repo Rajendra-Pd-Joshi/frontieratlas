@@ -77,7 +77,8 @@ async def yc_startups(session, sem, target: int) -> list[dict]:
         out.append(Startup(source=Source(name="Y Combinator",
                                          url=f"https://www.ycombinator.com/companies/{slug}"),
                            content=StartupContent(entityName=h["name"],
-                                                  employeeCount=h.get("team_size"))).model_dump(mode="json"))
+                                                  employeeCount=h.get("team_size"),
+                                                  website=h.get("website"))).model_dump(mode="json"))
     return out
 
 

@@ -23,7 +23,7 @@ Status: everything that can be done before submission day is done.
    `GOOGLE_SHEETS_CREDENTIALS=/path/to/sa.json .venv/bin/python -m src.export_sheets --upload`
    (needs a Google service-account JSON; without it, import the 6 CSVs
    manually into a Sheet and share it publicly)
-4. Push this repo to GitHub (see below) and confirm the README renders.
+4. Push this repo to GitHub (see below) and confirm the README renders. — DONE 2026-11-23: pushed to https://github.com/Rajendra-Pd-Joshi/frontieratlas, main, 3 commits, README renders.
 5. Submit the form: https://forms.gle/3JJhukomumTFueRW7
    with the public Sheet URL and the GitHub repo URL.
 

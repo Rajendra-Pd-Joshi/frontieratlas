@@ -39,6 +39,7 @@ class Startup(BaseModel):
 class StartupContent(BaseModel):
     entityName: str
     employeeCount: Optional[int] = None
+    website: Optional[str] = None
 
 
 class Product(BaseModel):
