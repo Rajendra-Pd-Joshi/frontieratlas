@@ -1,10 +1,18 @@
-"""Build architecture.pdf (max 3 pages) from docs/architecture.md.
+"""Build architecture.pdf from docs/architecture.md (max 3 pages).
+
+Layout (US Letter, 13mm margins):
+- DejaVu Sans (regular + bold) so real glyphs render: em-dash, arrows,
+  >=, bullet. No ASCII mangling of the source text.
+- Title block + thin rule, numbered section headings in dark slate-blue,
+  justified body text, hanging-indent bullets.
+- Paragraphs are joined from the source file's hard-wrapped lines
+  (blank line = paragraph boundary; indented lines continue a bullet),
+  so text fills the full column width instead of breaking at ~72 chars.
 
 Usage: .venv/bin/python docs/build_architecture_pdf.py
-Writes architecture.pdf next to this script's project root.
-Fails (exit 1) if the result exceeds 3 pages — trim the markdown, not
-the font, if that happens.
 """
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
@@ -15,33 +23,83 @@ ROOT = Path(__file__).resolve().parent.parent
 MD = ROOT / "docs" / "architecture.md"
 OUT = ROOT / "architecture.pdf"
 
-W, H = 215.9, 279.4  # US Letter, mm
+W, H = 215.9, 279.4          # US Letter, mm
 MARGIN = 13
+TITLE_COLOR = (31, 56, 100)  # dark slate-blue for headings
+GREY = (90, 90, 90)
+
+REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
 class Doc(FPDF):
     def header(self):
         if self.page_no() == 1:
             return
-        self.set_font("Helvetica", "I", 8)
-        self.set_text_color(120, 120, 120)
+        self.set_font("Body", "", 8)
+        self.set_text_color(*GREY)
         self.cell(0, 6, "FrontierAtlas - Technical Architecture", align="R")
         self.ln(8)
+        self.set_text_color(0, 0, 0)
 
     def footer(self):
         self.set_y(-12)
-        self.set_font("Helvetica", "", 8)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 6, f"Page {self.page_no()} of {{nb}}", align="C")
+        self.set_font("Body", "", 8)
+        self.set_text_color(*GREY)
+        self.cell(0, 8, f"Page {self.page_no()} of {{nb}}", align="C")
+        self.set_text_color(0, 0, 0)
 
 
-def clean(text: str) -> str:
-    # Built-in Helvetica is latin-1 only: replace unicode punctuation.
-    return (text.replace("\u2014", "-").replace("\u2013", "-")
-                .replace("\u201c", '"').replace("\u201d", '"')
-                .replace("\u2018", "'").replace("\u2019", "'")
-                .replace("\u2265", ">=").replace("\u2264", "<=")
-                .replace("\u2192", "->").replace("\u2026", "..."))
+def parse_blocks(text: str):
+    """Yield ("h", title) / ("p", text) / ("b", text) blocks.
+
+    Consecutive non-blank lines join into one paragraph; a line
+    starting with "- " starts a bullet; indented lines continue it.
+    """
+    blocks = []
+    para: list[str] = []
+    bullet: list[str] = []
+
+    def flush_para():
+        if para:
+            blocks.append(("p", " ".join(para)))
+            para.clear()
+
+    def flush_bullet():
+        if bullet:
+            blocks.append(("b", " ".join(bullet)))
+            bullet.clear()
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            flush_para()
+            flush_bullet()
+            continue
+        if line.startswith("# "):            # document title, rendered separately
+            flush_para()
+            flush_bullet()
+            continue
+        m = re.match(r"^## (\d+)\. (.+)", line)
+        if m:
+            flush_para()
+            flush_bullet()
+            blocks.append(("h", f"{m.group(1)}. {m.group(2)}"))
+            continue
+        if line.startswith("- "):
+            flush_para()
+            flush_bullet()
+            bullet.append(line[2:].strip())
+            continue
+        if line.startswith("  ") and bullet:  # indented continuation of a bullet
+            bullet.append(line.strip())
+            continue
+        if bullet:
+            flush_bullet()
+        para.append(line.strip())
+    flush_para()
+    flush_bullet()
+    return blocks
 
 
 def render():
@@ -49,60 +107,51 @@ def render():
     pdf.alias_nb_pages()
     pdf.set_auto_page_break(True, margin=12)
     pdf.set_margins(MARGIN, 12, MARGIN)
+    pdf.add_font("Body", "", REG)
+    pdf.add_font("Body", "B", BOLD)
     pdf.add_page()
-    pdf.set_font("Helvetica", "B", 15)
-    pdf.cell(0, 8, "FrontierAtlas - Technical Architecture", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("Helvetica", "", 9)
-    pdf.set_text_color(90, 90, 90)
-    pdf.cell(0, 6, "GraphOne / FrontierAtlas AI Engineer demo task - Rajendra Prasad Joshi - 23 Nov 2026", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_text_color(0, 0, 0)
+
+    # Title block
+    pdf.set_font("Body", "B", 16)
+    pdf.set_text_color(*TITLE_COLOR)
+    pdf.cell(0, 9, "FrontierAtlas - Technical Architecture", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Body", "", 9.5)
+    pdf.set_text_color(*GREY)
+    pdf.cell(0, 6, "GraphOne / FrontierAtlas AI Engineer demo task - Rajendra Prasad Joshi - 23 Nov 2026",
+             new_x="LMARGIN", new_y="NEXT")
     pdf.ln(2)
+    pdf.set_draw_color(*TITLE_COLOR)
+    pdf.set_line_width(0.6)
+    pdf.line(MARGIN, pdf.get_y(), W - MARGIN, pdf.get_y())
+    pdf.ln(3)
+    pdf.set_text_color(0, 0, 0)
 
-    for line in MD.read_text(encoding="utf-8").splitlines():
-        line = line.rstrip()
-        if not line:
-            pdf.ln(0.5)
-            continue
-        m = re.match(r"^# (.+)", line)
-        if m:
-            continue  # title already rendered
-        m = re.match(r"^## (\d+)\. (.+)", line)
-        if m:
-            pdf.ln(1)
-            pdf.set_font("Helvetica", "B", 10.5)
-            pdf.cell(0, 6, clean(f"{m.group(1)}. {m.group(2)}"), new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(0.5)
-            continue
-        m = re.match(r"^- \*\*(.+?)\*\*:? ?(.*)$", line)
-        if m:
-            pdf.set_font("Helvetica", "", 9)
-            x = pdf.get_x()
-            pdf.set_font("Helvetica", "B", 9)
-            pdf.cell(3, 5, "-")
-            pdf.write(5, clean(m.group(1) + ": "))
-            pdf.set_font("Helvetica", "", 9)
-            pdf.multi_cell(0, 4.5, clean(m.group(2)))
-            pdf.ln(0.5)
-            continue
-        m = re.match(r"^- (.+)$", line)
-        if m:
-            pdf.set_font("Helvetica", "", 9)
-            pdf.cell(3, 5, "-")
-            pdf.multi_cell(0, 4.5, clean(m.group(1)))
-            pdf.ln(0.5)
-            continue
-        # Plain paragraph; strip markdown emphasis for the built-in font.
-        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", line)
+    for kind, text in parse_blocks(MD.read_text()):
+        # Strip backticks (code spans) but keep the code text itself.
         text = re.sub(r"`([^`]+)`", r"\1", text)
-        pdf.set_font("Helvetica", "", 9)
-        pdf.multi_cell(0, 4.5, clean(text))
-        pdf.ln(0.5)
+        if kind == "h":
+            pdf.ln(1.5)
+            pdf.set_font("Body", "B", 11.5)
+            pdf.set_text_color(*TITLE_COLOR)
+            pdf.cell(0, 6.5, text, new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(0.5)
+            pdf.set_text_color(0, 0, 0)
+        elif kind == "p":
+            pdf.set_font("Body", "", 9.5)
+            pdf.multi_cell(0, 5.2, text, align="J", markdown=True)
+            pdf.ln(1.2)
+        else:  # bullet with hanging indent
+            pdf.set_font("Body", "B", 9.5)
+            pdf.cell(5, 5.2, "\u2022")
+            pdf.set_font("Body", "", 9.5)
+            pdf.multi_cell(0, 5.2, text, align="J", markdown=True)
+            pdf.ln(0.8)
 
-    pdf.output(str(OUT))
-    print(f"pages: {pdf.pages_count} -> {OUT}")
-    if pdf.pages_count > 3:
-        print("ERROR: exceeds the 3-page limit — trim docs/architecture.md")
+    if pdf.page_no() > 3:
+        print(f"ERROR: {pdf.page_no()} pages - exceeds the 3-page limit", file=sys.stderr)
         sys.exit(1)
+    pdf.output(str(OUT))
+    print(f"pages: {pdf.page_no()} -> {OUT}")
 
 
 if __name__ == "__main__":
