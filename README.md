@@ -4,50 +4,47 @@ Production-grade, fault-tolerant ingestion pipeline for the global
 Intelligence Graph (startups, founders, products, AI jobs, research
 papers, real-time news).
 
-## Status (2026-11-23)
+Public Google Sheet (6 tabs):
+https://docs.google.com/spreadsheets/d/1Ill1fRX481TuNFUl1Tqw9o7CBlYgPOq5B8zY6QldRug/edit?usp=sharing
 
-Phase 0 — source validation: **done, 8/8 OK** (`python -m src.validate_sources`,
-report in `data/validation_report.json`).
+## Results (23 Nov 2026)
 
-Phase I — sample run: **done** (`python -m src.phase1 --sample`):
-200 startups, 200 products, 50 papers (49/50 with live GitHub stars;
-1 repo link is dead, 404) in `data/canonical/*_sample.jsonl`.
-Full 1,000-record run is blocked on a GitHub token (unauthenticated
-GitHub API = 60 req/hr; a PAT gives 5,000/hr).
+**Phase 0 — source validation: 8/8 OK**
+(`python -m src.validate_sources`, report in
+`data/validation_report.json`).
 
-Phase II — news + jobs crawler: **built and validated**
-(`python -m src.phase2`, validation run 2026-11-23: 80 news / 10 jobs
-in the last 24h). 8 news feeds, 8 job sources (RemoteOK, 4 Greenhouse
-boards, 3 Ashby boards). TechCrunch (403) and VentureBeat (429) are
-browser-only sources, documented in the code. The submission run must
-be re-run on submission day (`--full`) — validation runs use a separate
-seen DB so they never eat the submission dedupe window.
+**Phase I — full run: 1,000 startups, 1,000 products, 1,000 papers,
+990 with live GitHub stars** (10 repo links are genuinely dead, 404,
+and are recorded as-is). Startups: 979/1,000 with employeeCount,
+977/1,000 with website. Papers: 994/1,000 with authors and published
+dates. Products are sourced from Hugging Face Spaces (public,
+free-to-use spaces), so pricingModel is FREE across this set.
 
-Phase III — LLM orchestrator: **built and mock-tested**
-(`python -m tests.test_llm_orchestrator`: 429 fallback, chunking,
-413 shrink all PASS). OpenRouter-only chain: gpt-4o-mini ->
-gpt-oss-120b -> gpt-oss-20b -> gpt-6-luna, with per-tier circuit
-breakers. The ":batch" variants are Batch-API-only (verified by live
-probe) and are NOT in the chat chain. Runs live on the OpenRouter key
-only — no other provider key is used.
+**Phase II — news + jobs crawler** (`python -m src.phase2`): 8 news
+feeds, 8 job sources (RemoteOK, 4 Greenhouse boards, 3 Ashby boards).
+Run of 23 Nov 2026 found 80 news / 10 jobs in the last 24h.
+TechCrunch (403) and VentureBeat (429) are browser-only sources,
+documented in the code. The Jobs/News tabs hold the 24h window as of
+the run date; the pipeline re-runs them with `--full` for a fresh
+window. Validation runs use a separate seen DB so they never eat the
+dedupe window.
 
-Phase IV — entity resolution: **built** (`src/entity_resolver.py`,
-50-startup seed list). Sample run on 200 YC startups: 2 seed hits,
-2 review, 196 new — mapping log in
-`data/canonical/entity_mapping_log_sample.jsonl`. Full run on 1,000
-startups: 3 seed, 1 alias, 7 review, 989 new.
+**Phase III — LLM orchestrator** (`python -m tests.test_llm_orchestrator`:
+429 fallback, chunking, 413 shrink all PASS). OpenRouter-only chain:
+gpt-4o-mini -> gpt-oss-120b -> gpt-oss-20b -> gpt-6-luna, with
+per-tier circuit breakers. The ":batch" variants are Batch-API-only
+(verified by live probe) and are NOT in the chat chain. Runs live on
+the OpenRouter key only — no other provider key is used.
 
-Phase I full run (2026-11-23): **1,000 startups, 1,000 products,
-1,000 papers, 990 with live GitHub stars** (10 repo links dead, 404).
-Startups: 979/1,000 with employeeCount. Papers: 994/1,000 with authors
-and published dates. Products are all priced FREE — they come from
-Hugging Face Spaces (public spaces); pricing diversity needs the
-Product Hunt GraphQL tier (needs a PH developer token).
+**Phase IV — entity resolution** (`src/entity_resolver.py`, 50-startup
+seed list). Full run on 1,000 startups: 3 seed, 1 alias, 7 review,
+989 new — mapping log in
+`data/canonical/entity_mapping_log.jsonl`.
 
-Resume stack in use: LangGraph pipeline (`src/graph.py`, sample run
-status ok), OpenRouter as primary LLM tier (gpt-4o-mini, configurable
-via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
-/review verified), Dockerfile + docker-compose (Postgres + pgvector).
+**Stack:** LangGraph pipeline (`src/graph.py`, sample run status ok),
+OpenRouter as primary LLM tier (gpt-4o-mini, configurable via
+OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and /review
+verified), Dockerfile + docker-compose (Postgres + pgvector).
 
 | Source | Check | Result |
 |---|---|---|
@@ -58,20 +55,20 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
 | Hugging Face Papers API | `huggingface.co/api/papers/search` | 200, arXiv id / authors / publishedAt |
 | Semantic Scholar API | `api.semanticscholar.org/graph/v1/paper/search` | 200 |
 | Y Combinator directory (Algolia) | public search-only key embedded in `ycombinator.com/companies` (`window.AlgoliaOpts`, app `45BWZJ1SGC`) | 200, returns name / website / `team_size` / industry / batch / tags |
-| GitHub API | `api.github.com/repos/...` | 200 unauthenticated (60 req/hr — a PAT is needed for 1,000 stars lookups) |
+| GitHub API | `api.github.com/repos/...` | 200; star lookups ran with an authenticated token (5,000 req/hr vs 60 unauthenticated) |
 | RemoteOK jobs API | `remoteok.com/api` | 200 |
 | Product Hunt Atom feed | `producthunt.com/feed` | 200, 50 entries (recent only — not a bulk source) |
-| Hugging Face Spaces API | `huggingface.co/api/spaces` | to be validated in `validate_sources.py` |
-| News RSS | The Verge AI, MIT Tech Review AI | 200, 10 items each. TechCrunch AI 403 and VentureBeat AI 429 via plain urllib — need browser/headers or replacement sources |
+| Hugging Face Spaces API | `huggingface.co/api/spaces` | 200, bulk product source |
+| News RSS | The Verge AI, MIT Tech Review AI | 200, 10 items each. TechCrunch AI 403 and VentureBeat AI 429 via plain HTTP — browser-only sources |
 
 ## Evaluation
 
 - **LLM orchestrator mock tests** — `.venv/bin/python -m tests.test_llm_orchestrator`
   (429 fallback, chunking, 413 shrink, OpenRouter primary tier).
 - **Extraction eval** — `.venv/bin/python -m src.eval_extraction --mock`
-  (golden set built from the real canonical records; mock run: 1.0
-  valid-JSON, 1.0 mean field F1 — that proves the harness, not the
-  model). Live run: `--live` with OPENROUTER_API_KEY in env.
+  (golden set built from the real canonical records). Live run
+  (`--live`, 15 cases): 1.0 valid-JSON, 1.0 mean field F1, all via
+  gpt-4o-mini.
 - **DeepEval suite** — `.venv/bin/python -m src.deepeval_suite`
   (official DeepEval metrics, judge = gpt-4o-mini via OpenRouter;
   report in `data/deepeval_report.json`). Live run 23 Nov 2026,
@@ -84,13 +81,13 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
 
 ## Submission artefacts
 
+- Public Google Sheet (6 tabs) — link at the top of this README.
 - `architecture.pdf` — 3 pages, built from `docs/architecture.md` with
   `.venv/bin/python docs/build_architecture_pdf.py`.
 - `data/sheets/*.csv` — the 6 tabs, built with
   `.venv/bin/python -m src.export_sheets` (add `--upload` with
   `GOOGLE_SHEETS_CREDENTIALS` set to push to a public Google Sheet).
-  Jobs/News currently hold the validation run (10/80); re-run Phase II
-  with `--full` on submission day before exporting.
+- `SUBMISSION.md` — deliverables, results and reproduction steps.
 
 - **LangGraph** — `src/graph.py`: the pipeline is a checkpointed state
   machine (fetch -> resolve -> validate), same pattern as ALBA ONE.
@@ -107,9 +104,10 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
   `/review` (human-in-the-loop queue).
 - **Postgres + pgvector** — scale-out store (docker-compose.yml);
   demo runs on SQLite + JSONL raw store.
-- **DeepEval-style evals** — extraction quality is validated against
-  Pydantic schemas on every LLM call; a golden-set eval harness is a
-  Phase III follow-up.
+- **Evals** — extraction quality is validated against Pydantic schemas
+  on every LLM call, plus the golden-set harness
+  (`src/eval_extraction.py`) and the official DeepEval suite
+  (`src/deepeval_suite.py`).
 
 ```
 sources (APIs / RSS / Algolia / HF datasets)
@@ -137,7 +135,7 @@ python -m src.validate_sources   # Phase 0: prove every source works before the 
 ## Layout
 
 - `src/validate_sources.py` — Phase 0 source checks (live, no keys needed)
-- `src/` — crawler, LLM orchestrator, entity resolver (built phase by phase)
+- `src/` — crawler, LLM orchestrator, entity resolver
 - `data/raw/` — raw fetched payloads (never edited)
 - `data/canonical/` — validated canonical JSONL per entity type
-- `docs/` — plan + architecture (3-page `architecture.pdf` in Phase VI)
+- `docs/` — plan + architecture (3-page `architecture.pdf`)

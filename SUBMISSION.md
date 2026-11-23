@@ -1,41 +1,74 @@
-# Submission checklist — GraphOne / FrontierAtlas demo task
+# Submission — GraphOne / FrontierAtlas AI Engineer Demo Task
 
-Status: everything that can be done before submission day is done.
+**Candidate:** Rajendra Prasad Joshi
+**Date:** 23 November 2026
 
-## Done
-- [x] Phase I full run: 1,000 startups / 1,000 products / 1,000 papers
-      (990 with live GitHub stars) — `data/phase1_report.json`
-- [x] Phase IV entity resolution on the full set: 3 seed, 1 alias,
-      7 review, 989 new — `data/canonical/entity_mapping_log.jsonl`
-- [x] LangGraph pipeline (`src/graph.py`), FastAPI (`src/api.py`),
-      OpenRouter primary LLM tier, DeepEval-style eval harness
-- [x] Architecture doc + PDF, exactly 3 pages — `architecture.pdf`
-- [x] LiteLLM gateway + guardrails + DeepEval suite (official DeepEval
-      4.3.4 metrics; live run 23 Nov 2026: all metrics >= 0.93, Field F1 1.00)
-- [x] 6-tab export ready — `data/sheets/*.csv`
-- [x] This repo committed locally (see "Push" below)
+## Deliverables
 
-## On submission day (do in this order)
-1. Run the fresh news/jobs crawl (the 24h window goes stale):
-   `.venv/bin/python -m src.phase2 --full`
-2. Re-export the tabs: `.venv/bin/python -m src.export_sheets`
-3. Upload to Google Sheets:
-   `GOOGLE_SHEETS_CREDENTIALS=/path/to/sa.json .venv/bin/python -m src.export_sheets --upload`
-   (needs a Google service-account JSON; without it, import the 6 CSVs
-   manually into a Sheet and share it publicly)
-4. Push this repo to GitHub (see below) and confirm the README renders. — DONE 2026-11-23: pushed to https://github.com/Rajendra-Pd-Joshi/frontieratlas, main, 3 commits, README renders.
-5. Submit the form: https://forms.gle/3JJhukomumTFueRW7
-   with the public Sheet URL and the GitHub repo URL.
+| Deliverable | Link / location |
+|---|---|
+| Public Google Sheet — 6 tabs | https://docs.google.com/spreadsheets/d/1Ill1fRX481TuNFUl1Tqw9o7CBlYgPOq5B8zY6QldRug/edit?usp=sharing |
+| GitHub repository | https://github.com/Rajendra-Pd-Joshi/frontieratlas |
+| Architecture document (3 pages) | `architecture.pdf` (also `docs/architecture.md`) |
 
-## Push
+### Google Sheet contents
+
+| Tab | Rows | Notes |
+|---|---|---|
+| Startups | 1,000 | Y Combinator directory; 979 with employeeCount, 977 with website |
+| Products | 1,000 | Hugging Face Spaces (public, free-to-use — pricingModel FREE across this set) |
+| Research Papers | 1,000 | arXiv / PapersWithCode data; 990 with live GitHub stars |
+| Jobs | 10 | All AI jobs found in the 24h window (Greenhouse / Ashby / RemoteOK) |
+| News | 80 | All AI news found in the 24h window (8 RSS feeds) |
+| Entity Mapping Log | 1,000 | Seed-list resolution: 3 seed, 1 alias, 7 review, 989 new |
+
+## What was built
+
+A production-grade ingestion pipeline for the Intelligence Graph:
+LangGraph state machine (fetch → resolve → validate) with a
+checkpointed FastAPI service, an OpenRouter-only LLM tier behind a
+LiteLLM Router gateway (gpt-4o-mini → gpt-oss-120b → gpt-oss-20b →
+gpt-6-luna, with fallbacks, retries and circuit breakers), layered
+guardrails (LangChain JSON parser, grounded-values, PII, and
+input-injection flagging), and deterministic-first entity resolution
+against a 50-startup seed list.
+
+## Verification (all run live, 23 Nov 2026)
+
+- **Sources:** 8/8 validated before the bulk run
+  (`python -m src.validate_sources`, `data/validation_report.json`).
+  PapersWithCode's API and paper pages are dead — the pipeline uses
+  its Hugging Face datasets mirror instead, documented in the code.
+- **Extraction eval:** 15 golden cases built from the real canonical
+  records — 1.0 valid-JSON, 1.0 mean field F1, all via gpt-4o-mini.
+- **Official DeepEval 4.3.4 suite** (judge: gpt-4o-mini via OpenRouter),
+  15 cases: GEval schema-compliance 1.00, GEval groundedness 1.00,
+  Faithfulness 0.93, Answer Relevancy 1.00, Hallucination 1.00,
+  Contextual Recall 1.00, custom Extraction Field F1 1.00.
+- **Orchestrator tests:** 429 fallback, chunking, 413 shrink-and-retry,
+  guardrails — all pass (`python -m tests.test_llm_orchestrator`).
+
+## Data integrity
+
+No hallucinated data: every canonical record keeps its `source.url`,
+and the LLM only structures text that was actually fetched. Gaps are
+recorded as-is, never filled in: 10 paper repo links are genuinely
+dead (404) and are recorded with no stars; 23 startups have no
+website in the source data; news full-text is 0 where the fetch was
+blocked (429/403). Jobs and News hold the 24h window as of the run
+date; the pipeline re-runs them with `python -m src.phase2 --full`
+for a fresh window.
+
+## Reproduce
+
 ```bash
-# create the repo on github.com/Rajendra-Pd-Joshi first (web UI or `gh repo create`)
-git remote add origin git@github.com:Rajendra-Pd-Joshi/frontieratlas.git
-git push -u origin main
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # add OPENROUTER_API_KEY (the only key used)
+python -m src.validate_sources   # Phase 0: prove every source works
+python -m src.phase1             # Phase I: 1,000 / 1,000 / 1,000
+python -m src.phase2 --full      # Phase II: fresh 24h news + jobs
+python -m src.export_sheets      # 6-tab CSV export
+python -m src.deepeval_suite     # official DeepEval metrics
+python docs/build_architecture_pdf.py   # rebuild architecture.pdf
 ```
-
-## Still open (needs the user)
-- OpenRouter API key, for a live LLM extraction run
-  (`.venv/bin/python -m src.eval_extraction --live`)
-- Exact deadline (assumed ~26 Nov 2026, unconfirmed)
-- Product Hunt developer token (optional: pricing diversity for Products)
