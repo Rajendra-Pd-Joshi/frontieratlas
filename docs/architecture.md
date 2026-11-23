@@ -40,15 +40,25 @@ Scaling to 500k is infrastructure, not new code:
   arXiv ID). Re-running a shard upserts, never duplicates.
 - **Throughput math.** Demo: 3,000 records in ~2 min single-node
   (~25/s, dominated by GitHub star lookups at concurrency 5). At
-  concurrency 50 with a GitHub token (5,000 req/hr per token; use a
-  token pool for 500k stars), 500k records is ~6–8 hours on one node,
-  linear with workers.
+  concurrency 50, 500k records is ~6–8 hours on one node, linear
+  with workers.
 
 ## 3. Handling 413s & 429s
 
-LLM tiers (in order): OpenRouter gpt-4o-mini → Gemini Flash → Groq
-Llama 3 → DeepSeek. Token budgets are conservative per tier
-(OpenRouter 8k, Gemini 8k, Groq 6k, DeepSeek 16k input tokens).
+LLM gateway (LiteLLM Router, src/llm_gateway.py) — one entry point
+for all LLM calls, with built-in fallbacks, retries and cooldowns.
+OpenRouter only; no other provider key is used anywhere in this
+project. Model chain (fallback order, cost first): gpt-4o-mini (8k
+input tokens) → gpt-oss-120b (16k) → gpt-oss-20b (8k) →
+gpt-6-luna (16k). The user-specified ":batch" variants are Batch-API-
+only: OpenRouter rejects them on chat/completions with 404 (verified
+by the live probe, data/openrouter_probe.json), so the live chain uses
+the same models without the suffix; the ":batch" slugs are kept for a
+future bulk Batch-API path. The gpt-oss models are reasoning models
+and need a real max_tokens budget (max_tokens=10 returns empty
+content). Portkey's gateway was considered and not used: it needs a
+separate Portkey account/key, while LiteLLM Router runs locally on
+the single OpenRouter key.
 
 - **429:** exponential backoff with full jitter, max 3 attempts per
   tier, then fall to the next tier. Three consecutive failures open a
@@ -106,14 +116,12 @@ data via Hugging Face datasets, Greenhouse/Ashby job-board APIs.
 
 For Cloudflare / Datadome-protected domains: real browser sessions
 (Playwright, persistent context, realistic viewport + headers),
-human-like pacing (jittered delays, no parallel hammering of one
-host), session/cookie reuse, and residential-proxy rotation only as a
-last resort. No captcha solving is claimed: a CAPTCHA is a stop
-signal — the item is queued for a later run or a manual pass, and the
-attempt is logged. TechCrunch (403) and VentureBeat (429) are
-documented as browser-only sources for exactly this reason. Scraping
-always respects robots.txt and the site's terms; where terms forbid
-automated access, the source is not used.
+human-like pacing, session/cookie reuse, and residential-proxy
+rotation only as a last resort. No captcha solving is claimed: a
+CAPTCHA is a stop signal — the item is queued for a later run or a
+manual pass. TechCrunch (403) and VentureBeat (429) are documented
+as browser-only sources for exactly this reason. Scraping always
+respects robots.txt and the site's terms.
 
 ## 7. Entity resolution
 
@@ -127,11 +135,18 @@ entity instead of forcing a seed match. Full run: 3 seed, 1 alias,
 
 ## 8. Evaluation & limits (honest notes)
 
-- Extraction eval (`src/eval_extraction.py`, DeepEval-style): golden
-  set built from the real canonical records; mock run scores 1.0
-  valid-JSON and 1.0 mean field F1 — that proves the harness, not the
-  model. A live run needs API keys and will score lower; the report
-  records tier, latency and per-field F1.
+- DeepEval suite (`src/deepeval_suite.py`, official DeepEval 4.3.4
+  metrics, judge = gpt-4o-mini via OpenRouter): 15 golden cases,
+  live run 23 Nov 2026 — GEval schema-compliance 1.00, GEval
+  groundedness 1.00, Faithfulness 0.93, Answer Relevancy 1.00,
+  Hallucination 1.00, Contextual Recall 1.00, custom Extraction
+  Field F1 1.00. Scores are 0–1; a case passes iff score >= threshold
+  (0.7, F1 0.8). Faithfulness was 1.00 on the first run — the judge
+  is non-deterministic (±0.07 run-to-run).
+- Guardrails (`src/guardrails.py`): LangChain JSON parser guard,
+  grounded-values guard (a value not in the source text is dropped,
+  never kept), PII guard, input-injection flagging. Live extraction
+  run: 1.0 valid-JSON, 1.0 mean field F1 across 15 cases.
 - Products are all priced FREE: they come from Hugging Face Spaces
   (public spaces). Pricing diversity needs the Product Hunt GraphQL
   tier (developer token not yet available).

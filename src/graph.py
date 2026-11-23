@@ -21,7 +21,7 @@ Graph: fetch_startups -> fetch_papers -> fetch_products
 
 Usage:
   .venv/bin/python -m src.graph --sample
-  GITHUB_TOKEN=... .venv/bin/python -m src.graph --full
+  .venv/bin/python -m src.graph --full   # stars unauthenticated (60/hr)
 """
 from __future__ import annotations
 
@@ -70,8 +70,7 @@ async def _fetch_node(state: PipelineState, kind: str) -> dict:
             if kind == "startups":
                 records = await yc_startups(client, sem, targets["startups"])
             elif kind == "papers":
-                records, stars = await pwc_papers(client, sem, targets["papers"],
-                                                  os.environ.get("GITHUB_TOKEN"))
+                records, stars = await pwc_papers(client, sem, targets["papers"])
                 records = records
                 extra = {"stars": stars}
             else:

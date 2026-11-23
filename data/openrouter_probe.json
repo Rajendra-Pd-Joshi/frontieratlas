@@ -1,0 +1,33 @@
+{
+  "probed_at": "2026-11-23T07:45:13Z",
+  "models": [
+    {
+      "model": "openai/gpt-4o-mini",
+      "ok": true,
+      "http_status": 200,
+      "reply": "ok",
+      "ms": 898
+    },
+    {
+      "model": "openai/gpt-oss-120b",
+      "ok": true,
+      "http_status": 200,
+      "reply": "ok",
+      "ms": 1154
+    },
+    {
+      "model": "openai/gpt-oss-20b",
+      "ok": true,
+      "http_status": 200,
+      "reply": "ok",
+      "ms": 1235
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "ok": true,
+      "http_status": 200,
+      "reply": "ok",
+      "ms": 1302
+    }
+  ]
+}

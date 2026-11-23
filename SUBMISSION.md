@@ -10,6 +10,8 @@ Status: everything that can be done before submission day is done.
 - [x] LangGraph pipeline (`src/graph.py`), FastAPI (`src/api.py`),
       OpenRouter primary LLM tier, DeepEval-style eval harness
 - [x] Architecture doc + PDF, exactly 3 pages — `architecture.pdf`
+- [x] LiteLLM gateway + guardrails + DeepEval suite (official DeepEval
+      4.3.4 metrics; live run 23 Nov 2026: all metrics >= 0.93, Field F1 1.00)
 - [x] 6-tab export ready — `data/sheets/*.csv`
 - [x] This repo committed locally (see "Push" below)
 

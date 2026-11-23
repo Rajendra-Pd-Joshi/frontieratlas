@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-11-23T07:52:29Z",
+  "judge_model": "openai/gpt-4o-mini (OpenRouter)",
+  "cases": 15,
+  "seconds": 97,
+  "metrics": {
+    "schema-compliance [GEval]": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    },
+    "groundedness [GEval]": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    },
+    "Faithfulness": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 0.933,
+      "pass_rate": 0.867,
+      "errors": []
+    },
+    "Answer Relevancy": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    },
+    "Hallucination": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    },
+    "Contextual Recall": {
+      "threshold": 0.7,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    },
+    "Extraction Field F1": {
+      "threshold": 0.8,
+      "cases_measured": 15,
+      "mean_score": 1.0,
+      "pass_rate": 1.0,
+      "errors": []
+    }
+  }
+}

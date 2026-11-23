@@ -12,7 +12,7 @@ Sources (all validated live in src/validate_sources.py, 8/8 OK):
 
 Usage:
   .venv/bin/python -m src.phase1 --sample        # 200 startups, 50 papers, 200 products
-  .venv/bin/python -m src.phase1 --full          # 1000 / 1000 / 1000 (needs GITHUB_TOKEN)
+  .venv/bin/python -m src.phase1 --full          # 1000 / 1000 / 1000 (stars unauthenticated, 60/hr)
 """
 from __future__ import annotations
 
@@ -81,8 +81,15 @@ async def yc_startups(session, sem, target: int) -> list[dict]:
     return out
 
 
-async def pwc_papers(session, sem, target: int, gh_token: str | None) -> tuple[list[dict], dict]:
-    """PwC links -> arXiv join -> GitHub stars. Returns (records, stars_report)."""
+async def pwc_papers(session, sem, target: int) -> tuple[list[dict], dict]:
+    """PwC links -> arXiv join -> GitHub stars. Returns (records, stars_report).
+
+    Stars are fetched WITHOUT any token (per the user's instruction:
+    OpenRouter is the only key used in this project). Unauthenticated
+    GitHub API is 60 requests/hour, so a fresh 1,000-star run takes a
+    long time — the 990-star dataset from the 23 Nov full run stands as
+    the submission data; re-runs only refresh stars slowly.
+    """
     seen: dict[str, dict] = {}
     offset = 0
     while len(seen) < target:
@@ -124,10 +131,9 @@ async def pwc_papers(session, sem, target: int, gh_token: str | None) -> tuple[l
                     "title": (title.group(1).strip() if title else ""),
                     "published": published.group(1) if published else None,
                     "authors": authors}
-    # GitHub stars — the rate-limit bottleneck. Token: 5,000/hr. No token: 60/hr.
+    # GitHub stars — the rate-limit bottleneck. No token is used (user
+    # instruction: OpenRouter key only), so unauthenticated limit is 60/hr.
     gh_headers = {"Accept": "application/vnd.github+json", **UA}
-    if gh_token:
-        gh_headers["Authorization"] = f"Bearer {gh_token}"
     stars: dict[str, int] = {}
     rate_limited = False
     gh_sem = asyncio.Semaphore(5)
@@ -149,7 +155,7 @@ async def pwc_papers(session, sem, target: int, gh_token: str | None) -> tuple[l
         except Exception as e:  # noqa: BLE001
             if "403" in str(e) or "rate" in str(e).lower():
                 rate_limited = True
-                log.warning("github rate limit hit — stars incomplete (need GITHUB_TOKEN)")
+                log.warning("github rate limit hit — stars incomplete (unauthenticated, 60/hr)")
             else:
                 log.warning("github %s failed: %s", repo_url, e)
 
@@ -170,7 +176,7 @@ async def pwc_papers(session, sem, target: int, gh_token: str | None) -> tuple[l
                                   "paper_arxiv_id": p["paper_arxiv_id"], "row": p,
                                   "arxiv_meta": m, "github_stars": stars.get(p["repo_url"])})
     return out, {"stars_fetched": len(stars), "stars_requested": len(papers),
-                 "rate_limited": rate_limited, "token_present": bool(gh_token)}
+                 "rate_limited": rate_limited, "token_present": False}
 
 
 async def hf_products(session, sem, target: int) -> list[dict]:
@@ -209,12 +215,11 @@ async def main_async(sample: bool) -> int:
     target_startups = 200 if sample else 1000
     target_papers = 50 if sample else 1000
     target_products = 200 if sample else 1000
-    gh_token = os.environ.get("GITHUB_TOKEN")
     sem = asyncio.Semaphore(10)
     async with make_client(UA) as session:
         startups, papers, products = await asyncio.gather(
             yc_startups(session, sem, target_startups),
-            pwc_papers(session, sem, target_papers, gh_token),
+            pwc_papers(session, sem, target_papers),
             hf_products(session, sem, target_products))
     papers_list, stars_report = papers
     paths = {

@@ -29,13 +29,12 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
 
-import httpx
-
-from .common import ROOT, make_client
+from .common import ROOT
 from .llm_orchestrator import LLMOrchestrator
 
 CASES_PER_TYPE = 5
@@ -45,8 +44,10 @@ def _norm(v) -> str:
     if v is None:
         return ""
     if isinstance(v, list):
-        return "|".join(sorted(str(x).strip().lower() for x in v))
-    return str(v).strip().lower()
+        return "|".join(sorted(_norm(x) for x in v))
+    # Lowercase + strip leading/trailing punctuation/space, so "models."
+    # and "models" compare equal (same value, different sentence punctuation).
+    return re.sub(r"^[^a-z0-9]+|[^a-z0-9]+$", "", str(v).strip().lower())
 
 
 def build_golden() -> list[dict]:
@@ -54,8 +55,8 @@ def build_golden() -> list[dict]:
     startups = [json.loads(l) for l in open(ROOT / "data" / "canonical" / "startups.jsonl")][:CASES_PER_TYPE]
     for r in startups:
         c = r["content"]
-        text = (f"Company: {c['entityName']}. Website: {r['source']['url']}. "
-                f"Employees: {c.get('employeeCount') or 'unknown'}.")
+        text = (f"Company: {c['entityName']} | Website: {r['source']['url']} | "
+                f"Employees: {c.get('employeeCount') or 'unknown'}")
         cases.append({"kind": "startup",
                       "instruction": 'Extract JSON {"entityName": str, "employeeCount": int or null}.',
                       "text": text,
@@ -63,9 +64,9 @@ def build_golden() -> list[dict]:
     papers = [json.loads(l) for l in open(ROOT / "data" / "canonical" / "papers.jsonl")][:CASES_PER_TYPE]
     for r in papers:
         c = r["content"]
-        text = (f"Title: {c['title']}. Authors: {', '.join(c['authors'])}. "
-                f"Published: {c.get('published_date')}. Code: {c.get('github_url')} "
-                f"({c.get('github_stars')} stars).")
+        text = (f"Title: {c['title']} | Authors: {', '.join(c['authors'])} | "
+                f"Published: {c.get('published_date')} | Code: {c.get('github_url')} "
+                f"({c.get('github_stars')} stars)")
         cases.append({"kind": "paper",
                       "instruction": 'Extract JSON {"title": str, "authors": [str], "github_stars": int or null}.',
                       "text": text,
@@ -74,9 +75,11 @@ def build_golden() -> list[dict]:
     products = [json.loads(l) for l in open(ROOT / "data" / "canonical" / "products.jsonl")][:CASES_PER_TYPE]
     for r in products:
         c = r["content"]
-        text = f"Product page: {r['source']['url']}. Built by: {c['startupName']}. Pricing: {c['pricingModel']}."
+        text = f"Product page: {r['source']['url']} | Built by: {c['startupName']} | Pricing: {c['pricingModel']}"
         cases.append({"kind": "product",
-                      "instruction": 'Extract JSON {"startupName": str, "pricingModel": str}.',
+                      "instruction": 'Extract JSON {"startupName": str, "pricingModel": str}. '
+                                     'startupName is the account that built the product (the "Built by" value), '
+                                     'not the space/page name in the URL.', 
                       "text": text,
                       "expected": {"startupName": c["startupName"], "pricingModel": c["pricingModel"]}})
     return cases
@@ -106,37 +109,21 @@ async def run_case(orch: LLMOrchestrator, case: dict) -> dict:
 async def main_async(live: bool) -> int:
     cases = build_golden()
     if live:
-        async with make_client() as client:
-            orch = LLMOrchestrator(client)
-            results = [await run_case(orch, c) for c in cases]
+        orch = LLMOrchestrator()  # real LiteLLM gateway; needs OPENROUTER_API_KEY
+        results = [await run_case(orch, c) for c in cases]
     else:
-        # Mock mode: fake keys so the orchestrator does not skip every tier.
-        for k in ("OPENROUTER_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY"):
-            os.environ.setdefault(k, "fake-mock-key")
+        # Mock mode: fake gateway echoes the expected JSON for the case
+        # whose text is in the prompt (proves harness plumbing, not the model).
+        class FakeGateway:
+            async def complete(self, messages, model=None, **kwargs):
+                text = messages[-1]["content"]
+                for c in cases:
+                    if c["text"] in text:
+                        return json.dumps(c["expected"]), "openai/gpt-4o-mini"
+                return "{}", "openai/gpt-4o-mini"
 
-        def handler(request: httpx.Request) -> httpx.Response:
-            # Mock: echo back the expected JSON for the case whose text is
-            # in the request body (proves harness plumbing, not the model).
-            import re as _re
-            body = json.loads(request.content.decode())
-            text = ""
-            if "contents" in body:
-                text = body["contents"][0]["parts"][0]["text"]
-            else:
-                text = body["messages"][0]["content"]
-            for c in cases:
-                if c["text"] in text:
-                    payload = json.dumps(c["expected"])
-                    break
-            else:
-                payload = "{}"
-            if "generativelanguage" in str(request.url):
-                return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": payload}]}}]})
-            return httpx.Response(200, json={"choices": [{"message": {"content": payload}}]})
-        transport = httpx.MockTransport(handler)
-        async with httpx.AsyncClient(transport=transport) as client:
-            orch = LLMOrchestrator(client)
-            results = [await run_case(orch, c) for c in cases]
+        orch = LLMOrchestrator(gateway=FakeGateway())
+        results = [await run_case(orch, c) for c in cases]
     n = len(results)
     report = {"mode": "live" if live else "mock", "cases": n,
               "valid_json_rate": round(sum(1 for r in results if r.get("valid_json")) / n, 3),

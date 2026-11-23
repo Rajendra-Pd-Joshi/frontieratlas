@@ -25,8 +25,11 @@ seen DB so they never eat the submission dedupe window.
 
 Phase III — LLM orchestrator: **built and mock-tested**
 (`python -m tests.test_llm_orchestrator`: 429 fallback, chunking,
-413 shrink all PASS). Gemini Flash -> Groq Llama 3 -> DeepSeek, with
-per-tier circuit breakers. Needs real API keys to run live.
+413 shrink all PASS). OpenRouter-only chain: gpt-4o-mini ->
+gpt-oss-120b -> gpt-oss-20b -> gpt-6-luna, with per-tier circuit
+breakers. The ":batch" variants are Batch-API-only (verified by live
+probe) and are NOT in the chat chain. Runs live on the OpenRouter key
+only — no other provider key is used.
 
 Phase IV — entity resolution: **built** (`src/entity_resolver.py`,
 50-startup seed list). Sample run on 200 YC startups: 2 seed hits,
@@ -68,7 +71,15 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
 - **Extraction eval** — `.venv/bin/python -m src.eval_extraction --mock`
   (golden set built from the real canonical records; mock run: 1.0
   valid-JSON, 1.0 mean field F1 — that proves the harness, not the
-  model). Live run: `--live` with API keys in env.
+  model). Live run: `--live` with OPENROUTER_API_KEY in env.
+- **DeepEval suite** — `.venv/bin/python -m src.deepeval_suite`
+  (official DeepEval metrics, judge = gpt-4o-mini via OpenRouter;
+  report in `data/deepeval_report.json`). Live run 23 Nov 2026,
+  15 cases: GEval schema-compliance 1.00, GEval groundedness 1.00,
+  Faithfulness 0.93, Answer Relevancy 1.00, Hallucination 1.00,
+  Contextual Recall 1.00, custom Extraction Field F1 1.00.
+  (Faithfulness was 1.00 on the first run — LLM-judge variance.)
+  Pytest wrapper: `.venv/bin/python -m pytest tests/test_eval_deepeval.py`.
 - **LangGraph pipeline** — `.venv/bin/python -m src.graph --sample`.
 
 ## Submission artefacts
@@ -83,9 +94,15 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
 
 - **LangGraph** — `src/graph.py`: the pipeline is a checkpointed state
   machine (fetch -> resolve -> validate), same pattern as ALBA ONE.
-- **LLM tiers** — `src/llm_orchestrator.py`: OpenRouter (gpt-4o-mini,
-  primary, per user preference) -> Gemini Flash -> Groq Llama 3 ->
-  DeepSeek, with chunking, 429/413 handling and circuit breakers.
+- **LLM gateway** — `src/llm_gateway.py`: LiteLLM Router over the four
+  OpenRouter models (gpt-4o-mini -> gpt-oss-120b -> gpt-oss-20b ->
+  gpt-6-luna) with built-in fallbacks, retries and cooldowns.
+- **Guardrails** — `src/guardrails.py`: LangChain JSON parser guard,
+  grounded-values guard (every extracted value must appear in the
+  source text), PII guard, and input-injection flagging.
+- **LLM tiers** — `src/llm_orchestrator.py`: extraction engine on top of
+  the gateway, with chunking, 429/413 handling and circuit breakers.
+  No other provider key is used.
 - **FastAPI** — `src/api.py`: `/health`, `/run/phase1`, `/runs/{id}`,
   `/review` (human-in-the-loop queue).
 - **Postgres + pgvector** — scale-out store (docker-compose.yml);
@@ -98,7 +115,7 @@ via OPENROUTER_MODEL), FastAPI service (`src/api.py`, /health and
 sources (APIs / RSS / Algolia / HF datasets)
   -> raw store (JSONL, one file per source+run, source URL + fetched_at kept)
   -> normalise (Pydantic schemas, UTC ISO-8601, dedupe by canonical key)
-  -> LLM extraction (Gemini Flash -> Groq Llama 3 -> DeepSeek, chunking, 429/413 handling)
+  -> LLM extraction (OpenRouter chain, chunking, 429/413 handling)
   -> entity resolution (deterministic first, seed list of 50, confidence-scored)
   -> canonical store (SQLite for the demo; Postgres + pgvector/Neo4j at 500k scale)
   -> Google Sheets export (6 tabs)
@@ -113,7 +130,7 @@ schema validation rejects anything else to a dead-letter file.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # add GEMINI_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY, GITHUB_TOKEN
+cp .env.example .env   # add OPENROUTER_API_KEY (the only key used)
 python -m src.validate_sources   # Phase 0: prove every source works before the bulk run
 ```
 

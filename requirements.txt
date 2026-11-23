@@ -16,3 +16,5 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 fpdf2>=2.9
 gspread>=6.0
+litellm>=1.0
+deepeval>=4.3
