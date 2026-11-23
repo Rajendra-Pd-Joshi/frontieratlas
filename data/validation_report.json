@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-11-23T07:06:48.154640+00:00",
+  "checks": {
+    "arxiv_api": {
+      "status": "OK",
+      "ms": 700,
+      "entries": 5,
+      "sample_title": "A Deep Reinforcement Learning Approach for Ramp Metering Based on Traffic Video "
+    },
+    "pwc_links_dataset": {
+      "status": "OK",
+      "ms": 475,
+      "rows_returned": 5,
+      "github_links": 5,
+      "sample": "Odyssey: A Public GPU-Based Code for General-Relativistic Ra",
+      "sample_repo": "https://github.com/LeonGeiger/Kerr"
+    },
+    "yc_algolia": {
+      "status": "OK",
+      "ms": 1001,
+      "hits": 5,
+      "total_ai_query": 3382,
+      "sample": "Aikido Technologies",
+      "sample_team_size": 5,
+      "sample_website": "https://www.aikidotechnologies.com"
+    },
+    "hf_spaces": {
+      "status": "OK",
+      "ms": 633,
+      "spaces": 5,
+      "sample": "huggingface/moe-blogpost",
+      "sample_author": "huggingface"
+    },
+    "product_hunt_feed": {
+      "status": "OK",
+      "ms": 538,
+      "entries": 50,
+      "sample": "MeshLive"
+    },
+    "github_stars": {
+      "status": "OK",
+      "ms": 476,
+      "repo": "pytorch/pytorch",
+      "stars": 105829
+    },
+    "news_rss": {
+      "status": "OK",
+      "ms": 4096,
+      "items_per_feed": {
+        "verge_ai": 10,
+        "mit_ai": 10,
+        "ars_ai": 20,
+        "zdnet_ai": 25,
+        "ieee_ai": 20
+      }
+    },
+    "jobs_apis": {
+      "status": "OK",
+      "ms": 9712,
+      "remoteok_ai_jobs": 5,
+      "sample_remoteok": "Web3 Business Development",
+      "greenhouse_jobs_by_board": {
+        "anthropic": 636,
+        "databricks": 894,
+        "scaleai": 162
+      }
+    }
+  }
+}

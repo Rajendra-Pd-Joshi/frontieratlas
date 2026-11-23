@@ -1,0 +1,29 @@
+# Postgres + pgvector is the scale-out store: canonical records in Postgres,
+# embeddings for semantic dedupe in pgvector, relationships in Neo4j (see
+# architecture.pdf). The demo runs on SQLite; this compose file is the
+# production shape.
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      - db
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=frontieratlas
+      - POSTGRES_PASSWORD=frontieratlas
+      - POSTGRES_DB=frontieratlas
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

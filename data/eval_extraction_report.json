@@ -1,0 +1,162 @@
+{
+  "mode": "mock",
+  "cases": 15,
+  "valid_json_rate": 1.0,
+  "mean_field_f1": 1.0,
+  "tiers": [
+    "openrouter"
+  ],
+  "mean_ms": 0,
+  "results": [
+    {
+      "kind": "startup",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 2,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "startup",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 1,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "startup",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 1,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "startup",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "startup",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 1,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "paper",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 3,
+      "fields_total": 3
+    },
+    {
+      "kind": "paper",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 1,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 3,
+      "fields_total": 3
+    },
+    {
+      "kind": "paper",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 3,
+      "fields_total": 3
+    },
+    {
+      "kind": "paper",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 3,
+      "fields_total": 3
+    },
+    {
+      "kind": "paper",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 3,
+      "fields_total": 3
+    },
+    {
+      "kind": "product",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "product",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "product",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "product",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    },
+    {
+      "kind": "product",
+      "tier": "openrouter",
+      "chunked": 0,
+      "ms": 0,
+      "valid_json": true,
+      "field_f1": 1.0,
+      "fields_correct": 2,
+      "fields_total": 2
+    }
+  ]
+}

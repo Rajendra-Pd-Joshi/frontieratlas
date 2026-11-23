@@ -1,0 +1,21 @@
+{
+  "mode": "full",
+  "generated_at": "2026-11-23T07:25:06.449038+00:00",
+  "counts": {
+    "startups": 1000,
+    "papers": 1000,
+    "products": 1000,
+    "papers_with_stars": 990
+  },
+  "stars": {
+    "stars_fetched": 898,
+    "stars_requested": 1000,
+    "rate_limited": false,
+    "token_present": true
+  },
+  "files": {
+    "startups": "/home/hatch/workspace/graphone-frontieratlas/data/canonical/startups.jsonl",
+    "papers": "/home/hatch/workspace/graphone-frontieratlas/data/canonical/papers.jsonl",
+    "products": "/home/hatch/workspace/graphone-frontieratlas/data/canonical/products.jsonl"
+  }
+}

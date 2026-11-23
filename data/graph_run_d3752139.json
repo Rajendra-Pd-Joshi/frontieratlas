@@ -1,0 +1,21 @@
+{
+  "run_id": "d3752139-6f1d-42d8-a127-2b7c9f14a146",
+  "mode": "sample",
+  "status": "failed",
+  "counts": {
+    "startups": 200,
+    "papers": 50,
+    "products": 200
+  },
+  "stars": {
+    "stars_fetched": 47,
+    "stars_requested": 50,
+    "rate_limited": false,
+    "token_present": false
+  },
+  "review_count": 2,
+  "errors": [
+    "papers with stars below 95%: {'stars_fetched': 47, 'stars_requested': 50, 'rate_limited': False, 'token_present': False}"
+  ],
+  "finished_at": "2026-11-23T07:26:08.363393+00:00"
+}

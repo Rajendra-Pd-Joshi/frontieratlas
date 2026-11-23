@@ -1,0 +1,19 @@
+{
+  "run_id": "00112085-f857-411b-9478-775dedd8975d",
+  "mode": "sample",
+  "status": "ok",
+  "counts": {
+    "startups": 200,
+    "papers": 50,
+    "products": 200
+  },
+  "stars": {
+    "stars_fetched": 47,
+    "stars_requested": 50,
+    "rate_limited": false,
+    "token_present": false
+  },
+  "review_count": 2,
+  "errors": [],
+  "finished_at": "2026-11-23T07:26:24.184858+00:00"
+}
