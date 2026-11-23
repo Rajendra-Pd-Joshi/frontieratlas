@@ -1,11 +1,9 @@
 company,role,date,is_remote,role_family,source_url,collectedAt
-Anthropic,,2026-11-22T19:38:51Z,False,Engineering,https://job-boards.greenhouse.io/anthropic/jobs/5491575008,2026-11-23T07:18:18.511449Z
-Anthropic,,2026-11-22T19:40:48Z,False,Engineering,https://job-boards.greenhouse.io/anthropic/jobs/5491578008,2026-11-23T07:18:18.595221Z
-Anthropic,,2026-11-22T19:46:05Z,False,Engineering,https://job-boards.greenhouse.io/anthropic/jobs/5491573008,2026-11-23T07:18:18.683611Z
-Databricks,,2026-11-23T00:42:06Z,False,Engineering,https://databricks.com/company/careers/open-positions/job?gh_jid=8910846002,2026-11-23T07:18:20.504726Z
-Databricks,,2026-11-23T00:42:21Z,False,Engineering,https://databricks.com/company/careers/open-positions/job?gh_jid=8907988002,2026-11-23T07:18:20.582794Z
-Databricks,,2026-11-22T14:11:35Z,False,Engineering,https://databricks.com/company/careers/open-positions/job?gh_jid=8916552002,2026-11-23T07:18:20.669182Z
-Scale AI,,2026-11-23T06:01:08Z,False,Engineering,https://job-boards.greenhouse.io/scaleai/jobs/4565836005,2026-11-23T07:18:21.191548Z
-Scale AI,,2026-11-23T06:14:52Z,False,Engineering,https://job-boards.greenhouse.io/scaleai/jobs/4565834005,2026-11-23T07:18:21.274331Z
-Scale AI,,2026-11-23T06:07:09Z,False,Engineering,https://job-boards.greenhouse.io/scaleai/jobs/4660340005,2026-11-23T07:18:21.352822Z
-Scale AI,,2026-11-23T05:52:45Z,False,Engineering,https://job-boards.greenhouse.io/scaleai/jobs/4591782005,2026-11-23T07:18:21.480706Z
+Databricks,,2026-11-23T08:37:45Z,False,Engineering,https://databricks.com/company/careers/open-positions/job?gh_jid=8849858002,2026-11-23T08:53:49.768684Z
+Databricks,,2026-11-23T08:37:45Z,False,Engineering,https://databricks.com/company/careers/open-positions/job?gh_jid=8735828002,2026-11-23T08:53:49.835864Z
+OpenAI,,2026-11-22T17:08:09.743000Z,False,Research,https://jobs.ashbyhq.com/openai/ce15d226-65db-43f1-98ec-078e96a3a281,2026-11-23T08:53:52.563966Z
+OpenAI,,2026-11-22T17:12:41.400000Z,False,Research,https://jobs.ashbyhq.com/openai/d1906ab2-b829-4a13-b1f2-f4af97d699fa,2026-11-23T08:53:52.649076Z
+OpenAI,,2026-11-22T17:14:45.574000Z,False,Research,https://jobs.ashbyhq.com/openai/bc85c1a9-0f75-4c3a-807b-6d2bb26c8445,2026-11-23T08:53:52.722591Z
+OpenAI,,2026-11-22T17:17:35.967000Z,False,Research,https://jobs.ashbyhq.com/openai/ecfe655c-1369-4bcd-aae0-4a3b75fdf61b,2026-11-23T08:53:52.798192Z
+OpenAI,,2026-11-22T17:19:07.642000Z,False,Research,https://jobs.ashbyhq.com/openai/740b5d1b-f63d-49bb-962d-8e2778e925ef,2026-11-23T08:53:52.876214Z
+OpenAI,,2026-11-22T17:20:10.700000Z,False,Research,https://jobs.ashbyhq.com/openai/6785d983-8831-46d0-9c81-443f83664948,2026-11-23T08:53:52.949641Z
