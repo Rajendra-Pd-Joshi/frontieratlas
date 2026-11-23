@@ -66,7 +66,7 @@ def build() -> dict[str, Path]:
         _read_jsonl(ROOT / "data" / "canonical" / "jobs_validation.jsonl")
     out["Jobs"] = _write_csv("jobs",
         ["company", "role", "date", "is_remote", "role_family", "source_url", "collectedAt"],
-        [{"company": r["content"]["company"], "role": r["content"].get("role", ""),
+        [{"company": r["content"]["company"], "role": r["content"].get("title", ""),
           "date": r["content"].get("date", ""), "is_remote": r["content"].get("is_remote"),
           "role_family": r["content"].get("role_family", ""),
           "source_url": r["source"]["url"], "collectedAt": r["collectedAt"]} for r in jobs])
